@@ -1,0 +1,811 @@
+///////////////////////////////////////////////////////////////////////////////
+
+#include "twist_data.hh"
+
+void init_twist_deuteron_data            ();
+void init_twist_proton_data              ();
+void init_twist_wh_data                  ();
+void init_twist_proton_precompound_data  ();
+void init_twist_deuteron_precompound_data();
+
+void init_twist_proton_dog               ();   // data-over-geant
+void init_twist_deuteron_dog             ();   // data-over-geant
+
+namespace {
+  double const MP( 938. ); // in MeV/c
+  double const MD(1875.6); // [MeV/c]
+};
+
+//-----------------------------------------------------------------------------
+void init_twist_data() {
+  init_twist_proton_data();
+  init_twist_deuteron_data();
+
+  init_twist_wh_data();
+
+  init_twist_proton_precompound_data  ();
+  init_twist_deuteron_precompound_data();
+
+  init_twist_proton_dog();
+  init_twist_deuteron_dog();
+}
+
+//-----------------------------------------------------------------------------
+void init_twist_proton_data() {
+
+  float data [] = {
+		   80.5165,0.000533557,
+		   84.1421,0.000521752,
+		   88.4071,0.000504585,
+		   91.8190,0.000489565,
+		   95.4438,0.000472401,
+		   99.2818,0.000453092,
+		   102.906,0.000430567,
+		   106.957,0.000409113,
+		   110.581,0.000385517,
+		   114.418,0.000362991,
+		   118.256,0.000340466,
+		   124.226,0.000309358,
+		   129.343,0.000280396,
+		   132.967,0.000260015,
+		   138.084,0.000234270,
+		   144.375,0.000205304,
+		   153.438,0.000166680,
+		   162.715,0.000134488,
+		   174.019,0.000101752,
+		   184.470,7.75952e-05,
+		   194.496,5.87997e-05,
+		   204.416,4.42926e-05,
+		   214.763,3.24639e-05,
+		   224.470,2.33174e-05,
+		   233.111,1.73906e-05,
+		   241.858,1.30715e-05,
+		   250.712,8.75193e-06,
+		   258.820,5.50703e-06,
+		   268.848,3.32724e-06,
+		   280.584,2.74932e-06,
+		   299.680,1.07312e-06,
+		   -1
+  };
+
+  float data_upper[] = {
+			80.0   ,0.000716729,  // artificial
+			80.6480,0.000708825,
+			83.4170,0.000675048,
+			86.8250,0.000632692,
+			90.5527,0.000588192,
+			94.3871,0.000544227,
+			99.2876,0.000494363,
+			103.336,0.000456829,
+			107.705,0.000417686,
+			112.608,0.000384437,
+			117.298,0.000358693,
+			122.629,0.000330803,
+			128.278,0.000299159,
+			133.928,0.000268588,
+			139.898,0.000237479,
+			146.615,0.000202616,
+			151.413,0.000181695,
+			156.531,0.000161845,
+			165.275,0.000132335,
+			174.126,0.000108183,
+			183.192,8.77835e-05,
+			193.004,6.89889e-05,
+			204.737,5.12593e-05,
+			219.244,3.56638e-05,
+			234.072,2.32831e-05,
+			249.753,1.35793e-05,
+			261.595,9.78503e-06,
+			274.610,4.91462e-06,
+			285.598,3.80338e-06,
+			292.746,1.63389e-06,
+			299.894,2.68032e-06,
+			-1
+  };
+
+  float data_lower[] = {
+			80.0   ,0.000353533,  // artificial, linear extrapolation
+			80.5982,0.000357216,
+			82.9474,0.000371680,
+			85.8299,0.000386141,
+			89.6726,0.000400063,
+			94.7945,0.000407549,
+			101.302,0.000404309,
+			105.248,0.000395719,
+			109.300,0.000382305,
+			113.778,0.000359778,
+			117.082,0.000337790,
+			121.665,0.000309367,
+			125.716,0.000284697,
+			130.193,0.000259489,
+			135.631,0.000234278,
+			140.428,0.000212822,
+			145.546,0.000190292,
+			150.771,0.000169370,
+			157.488,0.000144690,
+			163.140,0.000126446,
+			170.605,0.000102836,
+			180.843,7.86801e-05,
+			189.802,6.04245e-05,
+			200.148,4.37719e-05,
+			209.855,3.08735e-05,
+			220.095,2.06531e-05,
+			228.736,1.47263e-05,
+			240.364,8.78891e-06,
+			250.499,5.00078e-06,
+			261.273,1.74635e-06,
+			270.341,1.05978e-07,
+			282.824,-4.74613e-07,
+			291.572,-1.04186e-06,
+			300.106,-1.60835e-06,
+			-1
+  };
+
+  float x [1000], y [1000], ex [1000], ey [1000]; 
+  float xe[1000], ye[1000], exe[1000], eye[1000]; 
+
+  double  mp = MP;
+
+  int npt = 0;
+  for(int i=0; data_upper[2*i] >= 0; i++) {
+					// momentum
+    float p = data_upper[2*i  ];
+    x[npt] = p;
+    y[npt] = data_upper[2*i+1];
+					// energy
+    float e = p*p/(2*mp);
+    xe[npt] = e;
+    ye[npt] = (mp/p)*data_upper[2*i+1];
+
+    npt++;
+  }
+
+  twist.pp.gru = new TGraph(npt,x,y);
+  twist.pp.gru->SetName("twist_pp_gru");
+  twist.pp.su = new smooth(twist.pp.gru,x[0],x[npt-1]);
+
+  twist.pe.gru = new TGraph(npt,xe,ye);
+  twist.pe.gru->SetName("twist_pe_gru");
+  twist.pe.su = new smooth(twist.pe.gru,xe[0],xe[npt-1]);
+
+  npt = 0;
+  for(int i=0; data_lower[2*i] >= 0; i++) {
+					//momentum
+    float p = data_lower[2*i  ];
+    x[npt]  = data_lower[2*i  ];
+    y[npt]  = data_lower[2*i+1];
+					// energy
+    float e = p*p/(2*mp);
+    xe[npt] = e;
+    ye[npt] = (mp/p)*data_lower[2*i+1];	// 
+
+    npt++;
+  }
+
+  twist.pp.grl = new TGraph(npt,x,y);
+  twist.pp.grl->SetName("twist_pp_grl");
+  twist.pp.sl = new smooth(twist.pp.grl,x[0],x[npt-1]);
+
+  twist.pe.grl = new TGraph(npt,xe,ye);
+  twist.pe.grl->SetName("twist_pe_grl");
+  twist.pe.sl = new smooth(twist.pe.grl,xe[0],xe[npt-1]);
+
+  npt = 0;
+
+  for(int i=0; data[2*i] >= 0; i++) {
+					// momentum
+    float p   = data[2*i  ];
+    x[npt]    = p;
+    y[npt]    = data[2*i+1];
+
+    float eu  = twist.pp.su->GetFunc()->Eval(p);
+    float el  = twist.pp.sl->GetFunc()->Eval(p);
+
+    float err = (eu-el)/2;
+    ex[npt]   = 0;
+    ey[npt]   = err;
+					// energy
+    float e   = p*p/(2*mp);
+    xe[npt]   = e;
+    ye[npt]   = (mp/p)*data[2*i+1];
+    
+    eu  = twist.pe.su->GetFunc()->Eval(e);
+    el  = twist.pe.sl->GetFunc()->Eval(e);
+
+    err        = (eu-el)/2;
+    exe[npt]   = 0;
+    eye[npt]   = err;
+    
+    npt++;
+  }
+  
+  twist.pp.gr = new TGraphErrors(npt,x,y,ex,ey);
+  twist.pp.gr->SetName("twist_pp_gr");
+  twist.pp.gr->SetFillColor(kRed-2);
+  twist.pp.gr->SetFillStyle(3004);
+  twist.pp.gr->SetLineColor(kRed-2);
+
+  twist.pp.gr->SetMarkerColor(kRed-2);
+  twist.pp.gr->SetMarkerStyle(20);
+  twist.pp.gr->SetMarkerSize(1.0);
+
+  twist.pp.s = new smooth((TGraph*) twist.pp.gr,x[0],x[npt-1]);
+
+  twist.pe.gr = new TGraphErrors(npt,xe,ye,exe,eye);
+  twist.pe.gr->SetName("twist_pe_gr");
+  twist.pe.gr->SetFillColor(kRed-2);
+  twist.pe.gr->SetFillStyle(3004);
+  twist.pe.gr->SetLineColor(kRed-2);
+
+  twist.pe.gr->SetMarkerColor(kRed+2);
+  twist.pe.gr->SetMarkerStyle(20);
+  twist.pe.gr->SetMarkerSize(1.0);
+
+  twist.pe.s = new smooth((TGraph*) twist.pe.gr,xe[0],xe[npt-1]);
+}
+
+
+
+//-----------------------------------------------------------------------------
+void init_twist_deuteron_data() {
+
+  float data [] = {
+		   130.361,0.000103448,
+		   132.984,0.000108207,
+		   135.869,0.000111724,
+		   140.328,0.000114414,
+		   145.049,0.000114828,
+		   149.246,0.000112966,
+		   154.492,0.000109655,
+		   159.213,0.000104897,
+		   164.984,9.93103e-05,
+		   169.967,9.47586e-05,
+		   176.787,8.93793e-05,
+		   185.180,8.33793e-05,
+		   193.836,7.69655e-05,
+		   202.492,7.22069e-05,
+		   210.885,6.66207e-05,
+		   218.492,6.14483e-05,
+		   227.934,5.56552e-05,
+		   235.803,5.04828e-05,
+		   244.984,4.46897e-05,
+		   255.213,3.93103e-05,
+		   264.918,3.45517e-05,
+		   275.934,2.91724e-05,
+		   284.590,2.52414e-05,
+		   295.344,2.13103e-05,
+		   304.525,1.80000e-05,
+		   314.492,1.51034e-05,
+		   325.508,1.24138e-05,
+		   335.738,9.93103e-06,
+		   347.016,7.86207e-06,
+		   360.393,6.00000e-06,
+		   371.672,4.34483e-06,
+		   382.164,3.51724e-06,
+		   390.033,3.10345e-06,
+		   399.213,2.48276e-06,
+		   -1
+  };
+
+//-----------------------------------------------------------------------------
+  float data_upper[] = {
+			130.086,0.000158855, // added by hands to draw errors 
+			130.536,0.000153655,
+			132.984,0.000148414,
+			135.956,0.000143034,
+			139.978,0.000138483,
+			143.825,0.000134897,
+			147.322,0.000131862,
+			150.820,0.000127448,
+			155.716,0.000119724,
+			160.262,0.000112138,
+			164.284,0.000105931,
+			174.601,9.60000e-05,
+			181.945,9.15862e-05,
+			196.634,8.30345e-05,
+			205.377,7.73793e-05,
+			213.421,7.22759e-05,
+			221.639,6.71724e-05,
+			230.907,6.17931e-05,
+			239.650,5.64138e-05,
+			247.519,5.15862e-05,
+			256.087,4.68966e-05,
+			265.705,4.17931e-05,
+			275.148,3.68276e-05,
+			285.639,3.21379e-05,
+			295.432,2.80000e-05,
+			305.749,2.37241e-05,
+			317.464,1.97241e-05,
+			329.530,1.60000e-05,
+			341.596,1.28276e-05,
+			357.508,9.37931e-06,
+			372.197,7.03448e-06,
+			382.164,5.79310e-06,
+			391.432,4.68966e-06,
+			399.825,3.86207e-06,
+			407.825,3.04207e-06,  // added by hands to draw errors
+			-1
+  };
+
+  float data_lower[] = {
+			130.036,4.42414e-05,  // added by hands to draw errors
+			130.536,5.32414e-05,
+			131.934,6.22069e-05,
+			133.333,6.91035e-05,
+			134.732,7.53103e-05,
+			136.131,8.15172e-05,
+			138.929,8.82759e-05,
+			142.601,9.35172e-05,
+			147.847,9.64138e-05,
+			153.967,9.69655e-05,
+			159.213,9.60000e-05,
+			164.809,9.40690e-05,
+			169.530,9.04828e-05,
+			174.251,8.60690e-05,
+			180.372,8.06897e-05,
+			186.492,7.53103e-05,
+			193.311,7.08966e-05,
+			199.432,6.66207e-05,
+			205.727,6.24828e-05,
+			210.973,5.87586e-05,
+			216.918,5.44828e-05,
+			223.388,5.04828e-05,
+			228.634,4.70345e-05,
+			234.579,4.30345e-05,
+			240.874,3.93103e-05,
+			247.169,3.57241e-05,
+			253.464,3.18621e-05,
+			262.208,2.75862e-05,
+			269.377,2.42759e-05,
+			276.721,2.11034e-05,
+			284.240,1.82069e-05,
+			292.984,1.51724e-05,
+			302.077,1.25517e-05,
+			309.945,1.04828e-05,
+			321.486,8.00000e-06,
+			330.754,6.48276e-06,
+			339.672,5.10345e-06,
+			348.590,4.00000e-06,
+			358.033,2.89655e-06,
+			367.126,2.48276e-06,
+			373.945,1.65517e-06,
+			380.590,1.10345e-06,
+			390.383,1.10345e-06,
+			395.104,9.65517e-07,
+			399.825,8.27586e-07,
+			404.525,6.87586e-07,  // added by hands to draw errors
+			-1
+  };
+
+  
+  float x [1000], y [1000], ex [1000], ey [1000]; 
+  float xe[1000], ye[1000], exe[1000], eye[1000]; 
+
+  int npt = 0;
+  
+  double md = MD;
+
+  printf("-- startinit TWIST deuteron upper\n");
+  for(int i=0; data_upper[2*i] >= 0; i++) {
+					//momentum
+    float p = data_upper[2*i  ];
+    x[npt]  = p;
+    y[npt]  = data_upper[2*i+1];
+					// energy
+    float e = p*p/(2*md);
+    xe[npt] = e;
+    ye[npt] = (md/p)*data_upper[2*i+1];
+
+    printf("i,npt,x,y,xe,ye : %3i %3i %12.5e %12.5e  %12.5e %12.5e\n",
+	   i,npt,x[npt],y[npt],xe[npt],ye[npt]);
+
+    npt++;
+  }
+  printf("-- end init TWIST deuteron upper\n");
+
+  twist.dp.gru = new TGraph(npt,x,y);
+  twist.dp.gru->SetName("twist_dp_gru");
+  twist.dp.su = new smooth(twist.dp.gru,x[0],x[npt-1]);
+
+  twist.de.gru = new TGraph(npt,xe,ye);
+  twist.de.gru->SetName("twist_de_gru");
+  twist.de.su = new smooth(twist.de.gru,xe[0],xe[npt-1]);
+
+  npt = 0;
+  for(int i=0; data_lower[2*i] >= 0; i++) {
+    float p = data_lower[2*i  ];
+    x[npt]  = p;
+    y[npt]  = data_lower[2*i+1];
+					// energy
+    float e = p*p/(2*md);
+    xe[npt] = e;
+    ye[npt] = (md/p)*data_lower[2*i+1];
+
+    npt++;
+  }
+
+  twist.dp.grl = new TGraph(npt,x,y);
+  twist.dp.grl->SetName("twist_dp_grl");
+  twist.dp.sl = new smooth(twist.dp.grl,x[0],x[npt-1]);
+
+  twist.de.grl = new TGraph(npt,xe,ye);
+  twist.de.grl->SetName("twist_de_grl");
+  twist.de.sl = new smooth(twist.de.grl,xe[0],xe[npt-1]);
+
+  npt = 0;
+
+  for(int i=0; data[2*i] >= 0; i++) {
+					// momentum
+    float p   = data[2*i  ];
+    x[npt]    = p;
+    y[npt]    = data[2*i+1];
+    float eu  = twist.dp.su->GetFunc()->Eval(p);
+    float el  = twist.dp.sl->GetFunc()->Eval(p);
+    float err = (eu-el)/2;
+    ex[npt]   = 0;
+    ey[npt]   = err;
+					// energy
+    float e   = p*p/(2*md);
+    xe[npt]   = e;
+    ye[npt]   = (md/p)*data[2*i+1];
+    
+    eu        = twist.de.su->GetFunc()->Eval(e);
+    el        = twist.de.sl->GetFunc()->Eval(e);
+    err       = (eu-el)/2;
+    exe[npt]  = 0;
+    eye[npt]  = err;
+
+    npt++;
+  }
+
+  twist.dp.gr = new TGraphErrors(npt,x,y,ex,ey);
+  twist.dp.gr->SetName("twist_dp_gr");
+  twist.dp.gr->SetFillColor(kRed-2);
+  twist.dp.gr->SetFillStyle(3003);
+  twist.dp.gr->SetLineColor(kRed-2);
+
+  twist.dp.gr->SetMarkerColor(kRed-2);
+  twist.dp.gr->SetMarkerStyle(20);
+  twist.dp.gr->SetMarkerSize(1.0);
+
+  twist.dp.s = new smooth((TGraph*) twist.dp.gr,x [0],x [npt-1]);
+
+  twist.de.gr = new TGraphErrors(npt,xe,ye,exe,eye);
+  twist.de.gr->SetName("twist_de_gr");
+  twist.de.gr->SetFillColor(kMagenta-2);
+  twist.de.gr->SetFillStyle(3003);
+  twist.de.gr->SetLineColor(kMagenta-2);
+
+  twist.de.gr->SetMarkerColor(kMagenta-2);
+  twist.de.gr->SetMarkerStyle(20);
+  twist.de.gr->SetMarkerSize(1.0);
+  twist.de.s = new smooth((TGraph*) twist.de.gr,xe[0],xe[npt-1]);
+
+}
+
+
+//-----------------------------------------------------------------------------
+// this is needed for validation only
+//-----------------------------------------------------------------------------
+void init_twist_wh_data() {
+  float data_wh[] = {
+		     51.9915,5.35168e-06,
+		     53.9829,3.10398e-05,
+		     55.4054,5.88685e-05,
+		     56.9701,8.52701e-05,
+		     58.3926,0.000114526,
+		     60.2418,0.000139501,
+		     61.8065,0.000166616,
+		     63.6558,0.000193017,
+		     65.7895,0.000218705,
+		     68.4922,0.000247248,
+		     70.6259,0.000270795,
+		     74.1821,0.000292915,
+		     77.0270,0.000314322,
+		     82.7169,0.000326453,
+		     87.9801,0.000327166,
+		     93.3855,0.000316463,
+		     97.7952,0.000301478,
+		     102.347,0.000280785,
+		     106.330,0.000262232,
+		     110.597,0.000240112,
+		     114.011,0.000220846,
+		     118.279,0.000199439,
+		     121.550,0.000180173,
+		     126.387,0.000163761,
+		     130.797,0.000150204,
+		     136.060,0.000134506,
+		     140.754,0.000121662,
+		     146.159,0.000106677,
+		     150.853,9.59735e-05,
+		     156.259,8.31295e-05,
+		     161.095,7.38532e-05,
+		     166.643,6.24363e-05,
+		     171.337,5.38736e-05,
+		     177.169,4.53109e-05,
+		     182.575,3.81753e-05,
+		     188.122,3.10398e-05,
+		     193.385,2.60449e-05,
+		     199.360,2.24771e-05,
+		     204.623,2.10499e-05,
+		     210.171,1.89093e-05,
+		     215.718,1.60550e-05,
+		     221.408,1.67686e-05,
+		     226.956,1.17737e-05,
+		     232.361,1.32008e-05,
+		     238.122,1.01682e-05,
+		     243.883,8.56269e-06,
+		     249.431,5.35168e-06,
+		     255.192,5.88685e-06,
+		     260.633,4.81651e-06,
+		     266.181,4.28135e-06,
+		     271.835,3.21101e-06,
+		     277.809,2.67584e-06,
+		     283.464,2.14067e-06,
+		     289.118,1.07034e-06,
+		     294.666,1.60550e-06,
+		     299.573,1.07034e-06,
+		     -1
+  };
+
+  float x[1000], y[1000], ex[1000],ey[1000]; 
+
+  // integral twist.swh->GetFunc()->Integral(55,300) = 0.024389562
+  // I need 0.05
+
+  float wh_integral_55_300 = 0.024389562;
+  
+  int npt = 0;
+  for(int i=0; data_wh[2*i] >= 0; i++) {
+    x[npt] = data_wh[2*i  ];
+    y[npt] = data_wh[2*i+1]*0.05/wh_integral_55_300;
+    npt++;
+  }
+
+  twist.wh = new TGraph(npt,x,y);
+  twist.wh->SetName("g_twist_wh");
+  twist.swh = new smooth(twist.wh,x[0],x[npt-1]);
+}
+
+
+//-----------------------------------------------------------------------------
+void init_twist_proton_precompound_data() {
+
+  float data[] = {
+    2.77640,1.39527e-06,
+    7.75980,4.19189e-06,
+    12.8855,6.98698e-06,
+    17.8699,1.19210e-05,
+    22.5707,1.97079e-05,
+    27.5608,3.81788e-05,
+    32.5551,6.66242e-05,
+    37.5416,7.65455e-05,
+    42.3820,7.79187e-05,
+    47.6708,0.000129160,
+    52.6748,0.000180404,
+    57.5329,0.000223100,
+    62.6842,0.000285743,
+    67.5587,0.000366912,
+    72.8441,0.000410316,
+    77.6939,0.000433776,
+    82.8212,0.000440133,
+    87.7979,0.000427256,
+    92.9091,0.000395852,
+    97.7331,0.000358752,
+    102.697,0.000315951,
+    107.663,0.000278850,
+    112.771,0.000239609,
+    117.735,0.000195383,
+    122.988,0.000163266,
+    127.674,0.000137567,
+    132.788,0.000111151,
+    137.763,9.61360e-05,
+    142.736,7.39963e-05,
+    147.713,6.18311e-05,
+    152.690,4.96660e-05,
+    157.526,3.96397e-05,
+    162.647,3.24603e-05,
+    167.769,2.52809e-05,
+    172.749,2.02404e-05,
+    177.729,1.51999e-05,
+    182.710,1.22968e-05,
+    187.691,8.68118e-06,
+    191.960,7.21061e-06,
+    197.511,4.30142e-06,
+    202.778,4.95760e-06,
+    207.474,2.77000e-06,
+    212.883,1.28726e-06,
+    217.723,5.23067e-07,
+    223.274,4.63737e-07,
+    -1
+  };
+
+  float x[1000], y[1000], xe[1000], ye[1000]; 
+
+					// data - momentum 
+
+  double m = MP;
+
+  double scale = 0.031684037/0.017710988; 
+  // twist.pp.s->GetFunc()->Integral(80,300)/twist.ppg.s->GetFunc()->Integral(80,300);
+
+  int npt = 0;
+  for(int i=0; data[2*i] >= 0; i++) {
+    float p = data[2*i];
+    float e = p*p/(2*m);
+
+    x [npt] = p;
+    xe[npt] = e;
+    y [npt] = data[2*i+1]*scale;
+    ye[npt] = (m/p)*data[2*i+1]*scale;
+    npt++;
+  }
+
+  twist.ppg.gr = new TGraph(npt,x,y);
+  twist.ppg.gr->SetName("twist_ppg_gr");
+  twist.ppg.s  = new smooth(twist.ppg.gr,x[0],x[npt-1]);
+
+  twist.peg.gr = new TGraph(npt,xe,ye);
+  twist.peg.gr->SetName("twist_peg_gr");
+  twist.peg.s  = new smooth(twist.peg.gr,xe[0],xe[npt-1]);
+}
+
+
+//-----------------------------------------------------------------------------
+void init_twist_deuteron_precompound_data() {
+
+  float data[] = {
+    4.89939,2.07182e-07,
+    14.8731,6.90608e-08,
+    22.3972,3.45304e-07,
+    27.4716,6.21547e-07,
+    32.5459,6.90608e-08,
+    37.7953,6.21547e-07,
+    42.3447,6.21547e-07,
+    47.4191,4.83425e-07,
+    52.4934,8.97790e-07,
+    57.2178,1.45028e-06,
+    62.2922,2.83149e-06,
+    67.5416,6.56077e-06,
+    72.4409,1.09807e-05,
+    77.3403,1.49862e-05,
+    82.4147,2.09254e-05,
+    87.3141,2.87983e-05,
+    92.2135,3.88812e-05,
+    97.4628,4.64779e-05,
+    102.187,5.84945e-05,
+    106.912,6.36050e-05,
+    112.511,6.73343e-05,
+    117.585,7.32735e-05,
+    122.135,7.76934e-05,
+    126.684,8.19751e-05,
+    132.283,8.21133e-05,
+    137.533,8.04558e-05,
+    142.082,8.39088e-05,
+    147.507,8.22514e-05,
+    152.756,8.50138e-05,
+    157.130,8.01796e-05,
+    162.030,7.41022e-05,
+    167.454,7.82459e-05,
+    172.528,7.56215e-05,
+    177.603,7.25829e-05,
+    182.502,7.57597e-05,
+    187.577,6.78867e-05,
+    192.476,6.62293e-05,
+    197.200,6.22238e-05,
+    202.625,6.12569e-05,
+    207.524,5.73895e-05,
+    212.423,5.44890e-05,
+    217.673,5.18646e-05,
+    222.572,5.07597e-05,
+    227.822,4.56492e-05,
+    232.371,4.44061e-05,
+    237.270,3.87431e-05,
+    242.695,3.62569e-05,
+    247.244,3.30801e-05,
+    252.143,3.05939e-05,
+    257.043,2.83840e-05,
+    262.292,2.42403e-05,
+    267.367,2.28591e-05,
+    272.266,2.10635e-05,
+    277.165,1.88536e-05,
+    282.065,1.56768e-05,
+    287.139,1.52624e-05,
+    292.213,1.19475e-05,
+    297.638,1.09807e-05,
+    302.537,8.90884e-06,
+    306.912,8.90884e-06,
+    312.511,6.69890e-06,
+    317.060,5.45580e-06,
+    322.135,5.04144e-06,
+    327.209,3.52210e-06,
+    332.283,2.55525e-06,
+    337.183,2.41713e-06,
+    342.257,1.58840e-06,
+    346.807,1.31215e-06,
+    351.706,1.03591e-06,
+    357.830,7.59669e-07,
+    362.205,4.83425e-07,
+    367.454,3.45304e-07,
+    372.703,2.07182e-07,
+    399.650,6.90608e-08,
+    -1
+  };
+
+  float x[1000], y[1000], xe[1000], ye[1000]; 
+
+					// data - momentum 
+  double m = MD;
+					// normalize to data in the range p>80
+
+  double scale = 0.012029064/0.0089377043;
+  // twist.pp.s->GetFunc()->Integral(80,300)/twist.ppg.s->GetFunc()->Integral(80,300);
+
+  int npt = 0;
+  for(int i=0; data[2*i] >= 0; i++) {
+    float p = data[2*i];
+    float e = p*p/(2*m);
+
+    x [npt] = p;
+    xe[npt] = e;
+    y [npt] = data[2*i+1]*scale;
+    ye[npt] = (m/p)*data[2*i+1]*scale;
+    npt++;
+  }
+
+  twist.dpg.gr = new TGraph(npt,x,y);
+  twist.dpg.gr->SetName("twist_dpg_gr");
+  twist.dpg.s  = new smooth(twist.dpg.gr,x[0],x[npt-1]);
+
+  twist.deg.gr = new TGraph(npt,xe,ye);
+  twist.deg.gr->SetName("twist_deg_gr");
+  twist.deg.s  = new smooth(twist.deg.gr,xe[0],xe[npt-1]);
+}
+
+
+//-----------------------------------------------------------------------------
+// try to normalize to proton data
+//-----------------------------------------------------------------------------
+void init_twist_proton_dog() {
+
+  float x[1000], y[1000], xe[1000], ye[1000]; 
+
+  int npt = twist.pp.gr->GetN();
+
+  for(int i=0; i<npt; i++) {
+    double xx = twist.pp.gr->GetX()[i];
+    double yy = twist.pp.gr->GetY()[i];
+    double yg = twist.ppg.s->GetFunc()->Eval(xx);
+
+    x [i] = xx;
+
+    if (yg > 0) y[i] = yy/yg;
+    else        y[i] = 0;
+  }
+
+  twist.pp_dog = new TGraph(npt,x,y);
+}
+
+//-----------------------------------------------------------------------------
+// try to normalize to proton data
+//-----------------------------------------------------------------------------
+void init_twist_deuteron_dog() {
+
+  float x[1000], y[1000], xe[1000], ye[1000]; 
+
+  int npt = twist.dp.gr->GetN();
+
+  for(int i=0; i<npt; i++) {
+    double xx = twist.dp.gr->GetX()[i];
+    double yy = twist.dp.gr->GetY()[i];
+    double yg = twist.dpg.s->GetFunc()->Eval(xx);
+
+    x [i] = xx;
+
+    if (yg > 0) y[i] = yy/yg;
+    else        y[i] = 0;
+  }
+
+  twist.dp_dog = new TGraph(npt,x,y);
+}
+
