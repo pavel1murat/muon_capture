@@ -8,6 +8,7 @@
 #include "TGraphErrors.h"
 
 struct alcap_data {
+  double MP;
 
   struct plot_data {
     TGraphErrors* gr;
@@ -21,9 +22,12 @@ struct alcap_data {
   plot_data       pp;
   plot_data       pe;
 
+  alcap_data();
+  ~alcap_data();
 
-} alcap;
+  void  init();
 
-void  init_alcap_data();
+};
+
 
 #endif

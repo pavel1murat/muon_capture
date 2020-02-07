@@ -3,9 +3,18 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "alcap_data.hh"
 
-void init_alcap_data() {
+//-----------------------------------------------------------------------------
+alcap_data::alcap_data() {
+  MP = 938.;
+  init();
+}
 
-  float const MP = 938.;
+//-----------------------------------------------------------------------------
+alcap_data::~alcap_data() {
+}
+
+//-----------------------------------------------------------------------------
+void alcap_data::init() {
 
   float data [] = {
 		   2247.79,0.00280366,
@@ -99,15 +108,15 @@ void init_alcap_data() {
     npt++;
   }
 
-  alcap.pp.gru = new TGraph(npt,x,y);
-  alcap.pp.gru->SetName("alcap_pp_gru");
-  alcap.pp.gru->SetLineColor(kBlue+2);
-  alcap.pp.su = new smooth(alcap.pp.gru,x[0],x[npt-1]);
+  pp.gru = new TGraph(npt,x,y);
+  pp.gru->SetName("alcap_pp_gru");
+  pp.gru->SetLineColor(kBlue+2);
+  pp.su = new smooth(pp.gru,x[0],x[npt-1]);
 
-  alcap.pe.gru = new TGraph(npt,xe,ye);
-  alcap.pe.gru->SetName("alcap_pe_gru");
-  alcap.pe.gru->SetLineColor(kBlue+2);
-  alcap.pe.su = new smooth(alcap.pe.gru,x[0],x[npt-1]);
+  pe.gru = new TGraph(npt,xe,ye);
+  pe.gru->SetName("alcap_pe_gru");
+  pe.gru->SetLineColor(kBlue+2);
+  pe.su = new smooth(pe.gru,x[0],x[npt-1]);
 
   npt = 0;
   for(int i=0; data_lower[2*i] >= 0; i++) {
@@ -123,15 +132,15 @@ void init_alcap_data() {
     npt++;
   }
 
-  alcap.pp.grl = new TGraph(npt,x,y);
-  alcap.pp.grl->SetName("alcap_pp_grl");
-  alcap.pp.grl->SetLineColor(kBlue+2);
-  alcap.pp.sl = new smooth(alcap.pp.grl,x[0],x[npt-1]);
+  pp.grl = new TGraph(npt,x,y);
+  pp.grl->SetName("alcap_pp_grl");
+  pp.grl->SetLineColor(kBlue+2);
+  pp.sl = new smooth(pp.grl,x[0],x[npt-1]);
 
-  alcap.pe.grl = new TGraph(npt,xe,ye);
-  alcap.pe.grl->SetName("alcap_pe_grl");
-  alcap.pe.grl->SetLineColor(kBlue+2);
-  alcap.pe.sl = new smooth(alcap.pe.grl,x[0],x[npt-1]);
+  pe.grl = new TGraph(npt,xe,ye);
+  pe.grl->SetName("alcap_pe_grl");
+  pe.grl->SetLineColor(kBlue+2);
+  pe.sl = new smooth(pe.grl,x[0],x[npt-1]);
 
   npt = 0;
 
@@ -143,8 +152,8 @@ void init_alcap_data() {
     x[npt]    = p;
     y[npt]    = data[2*i+1]*2*p/MP;
 
-    float eu  = alcap.pp.su->GetFunc()->Eval(p);
-    float el  = alcap.pp.sl->GetFunc()->Eval(p);
+    float eu  = pp.su->GetFunc()->Eval(p);
+    float el  = pp.sl->GetFunc()->Eval(p);
 
     float err = (eu-el)/2;
     ex[npt]   = 0;
@@ -153,8 +162,8 @@ void init_alcap_data() {
     xe[npt]    = e;
     ye[npt]    = data[2*i+1]*2;
 
-    eu        = alcap.pe.su->GetFunc()->Eval(e);
-    el        = alcap.pe.sl->GetFunc()->Eval(e);
+    eu        = pe.su->GetFunc()->Eval(e);
+    el        = pe.sl->GetFunc()->Eval(e);
 
     err       = (eu-el)/2;
     exe[npt]  = 0;
@@ -164,29 +173,29 @@ void init_alcap_data() {
     npt++;
   }
 
-  alcap.pp.gr = new TGraphErrors(npt,x,y,ex,ey);
-  alcap.pp.gr->SetName("alcap_pp_gr");
-  alcap.pp.gr->SetFillColor(kBlue+2);
-  alcap.pp.gr->SetFillStyle(3005);
-  alcap.pp.gr->SetLineColor(kBlue+2);
+  pp.gr = new TGraphErrors(npt,x,y,ex,ey);
+  pp.gr->SetName("alcap_pp_gr");
+  pp.gr->SetFillColor(kBlue+2);
+  pp.gr->SetFillStyle(3002);
+  pp.gr->SetLineColor(kBlue+2);
 
-  alcap.pp.gr->SetMarkerColor(kBlue+2);
-  alcap.pp.gr->SetMarkerStyle(20);
-  alcap.pp.gr->SetMarkerSize(1.0);
+  pp.gr->SetMarkerColor(kBlue+2);
+  pp.gr->SetMarkerStyle(20);
+  pp.gr->SetMarkerSize(1.0);
 
-  alcap.pp.s = new smooth(alcap.pp.gr,x[0],x[npt-1]);
+  pp.s = new smooth(pp.gr,x[0],x[npt-1]);
 
-  alcap.pe.gr = new TGraphErrors(npt,xe,ye,exe,eye);
-  alcap.pe.gr->SetName("alcap_pe_gr");
-  alcap.pe.gr->SetFillColor(kBlue+2);
-  alcap.pe.gr->SetFillStyle(3005);
-  alcap.pe.gr->SetLineColor(kBlue+2);
+  pe.gr = new TGraphErrors(npt,xe,ye,exe,eye);
+  pe.gr->SetName("alcap_pe_gr");
+  pe.gr->SetFillColor(kBlue+2);
+  pe.gr->SetFillStyle(3002);
+  pe.gr->SetLineColor(kBlue+2);
 
-  alcap.pe.gr->SetMarkerColor(kBlue+2);
-  alcap.pe.gr->SetMarkerStyle(20);
-  alcap.pe.gr->SetMarkerSize(1.0);
+  pe.gr->SetMarkerColor(kBlue+2);
+  pe.gr->SetMarkerStyle(20);
+  pe.gr->SetMarkerSize(1.0);
 
-  alcap.pe.s = new smooth(alcap.pe.gr,xe[0],xe[npt-1]);
+  pe.s = new smooth(pe.gr,xe[0],xe[npt-1]);
 
   //  alcap.gr->Draw("A3");
 }		

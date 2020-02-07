@@ -2,36 +2,30 @@
 
 #include "twist_data.hh"
 
-void init_twist_deuteron_data            ();
-void init_twist_proton_data              ();
-void init_twist_wh_data                  ();
-void init_twist_proton_precompound_data  ();
-void init_twist_deuteron_precompound_data();
-
-void init_twist_proton_dog               ();   // data-over-geant
-void init_twist_deuteron_dog             ();   // data-over-geant
-
-namespace {
-  double const MP( 938. ); // in MeV/c
-  double const MD(1875.6); // [MeV/c]
-};
-
 //-----------------------------------------------------------------------------
-void init_twist_data() {
-  init_twist_proton_data();
-  init_twist_deuteron_data();
+twist_data::twist_data() {
+  MP =  938.;                    // MeV/c
+  MD = 1875.6;                   // MeV/c
 
-  init_twist_wh_data();
-
-  init_twist_proton_precompound_data  ();
-  init_twist_deuteron_precompound_data();
-
-  init_twist_proton_dog();
-  init_twist_deuteron_dog();
+  init();
 }
 
 //-----------------------------------------------------------------------------
-void init_twist_proton_data() {
+void twist_data::init() {
+  init_proton_data();
+  init_deuteron_data();
+
+  init_wh_data();
+
+  init_proton_precompound_data  ();
+  init_deuteron_precompound_data();
+
+  init_proton_dog();
+  init_deuteron_dog();
+}
+
+//-----------------------------------------------------------------------------
+void twist_data::init_proton_data() {
 
   float data [] = {
 		   80.5165,0.000533557,
@@ -160,13 +154,13 @@ void init_twist_proton_data() {
     npt++;
   }
 
-  twist.pp.gru = new TGraph(npt,x,y);
-  twist.pp.gru->SetName("twist_pp_gru");
-  twist.pp.su = new smooth(twist.pp.gru,x[0],x[npt-1]);
+  pp.gru = new TGraph(npt,x,y);
+  pp.gru->SetName("twist_pp_gru");
+  pp.su = new smooth(pp.gru,x[0],x[npt-1]);
 
-  twist.pe.gru = new TGraph(npt,xe,ye);
-  twist.pe.gru->SetName("twist_pe_gru");
-  twist.pe.su = new smooth(twist.pe.gru,xe[0],xe[npt-1]);
+  pe.gru = new TGraph(npt,xe,ye);
+  pe.gru->SetName("twist_pe_gru");
+  pe.su = new smooth(pe.gru,xe[0],xe[npt-1]);
 
   npt = 0;
   for(int i=0; data_lower[2*i] >= 0; i++) {
@@ -182,13 +176,13 @@ void init_twist_proton_data() {
     npt++;
   }
 
-  twist.pp.grl = new TGraph(npt,x,y);
-  twist.pp.grl->SetName("twist_pp_grl");
-  twist.pp.sl = new smooth(twist.pp.grl,x[0],x[npt-1]);
+  pp.grl = new TGraph(npt,x,y);
+  pp.grl->SetName("twist_pp_grl");
+  pp.sl = new smooth(pp.grl,x[0],x[npt-1]);
 
-  twist.pe.grl = new TGraph(npt,xe,ye);
-  twist.pe.grl->SetName("twist_pe_grl");
-  twist.pe.sl = new smooth(twist.pe.grl,xe[0],xe[npt-1]);
+  pe.grl = new TGraph(npt,xe,ye);
+  pe.grl->SetName("twist_pe_grl");
+  pe.sl = new smooth(pe.grl,xe[0],xe[npt-1]);
 
   npt = 0;
 
@@ -198,8 +192,8 @@ void init_twist_proton_data() {
     x[npt]    = p;
     y[npt]    = data[2*i+1];
 
-    float eu  = twist.pp.su->GetFunc()->Eval(p);
-    float el  = twist.pp.sl->GetFunc()->Eval(p);
+    float eu  = pp.su->GetFunc()->Eval(p);
+    float el  = pp.sl->GetFunc()->Eval(p);
 
     float err = (eu-el)/2;
     ex[npt]   = 0;
@@ -209,45 +203,45 @@ void init_twist_proton_data() {
     xe[npt]   = e;
     ye[npt]   = (mp/p)*data[2*i+1];
     
-    eu  = twist.pe.su->GetFunc()->Eval(e);
-    el  = twist.pe.sl->GetFunc()->Eval(e);
+    eu        = pe.su->GetFunc()->Eval(e);
+    el        = pe.sl->GetFunc()->Eval(e);
 
-    err        = (eu-el)/2;
-    exe[npt]   = 0;
-    eye[npt]   = err;
+    err       = (eu-el)/2;
+    exe[npt]  = 0;
+    eye[npt]  = err;
     
     npt++;
   }
   
-  twist.pp.gr = new TGraphErrors(npt,x,y,ex,ey);
-  twist.pp.gr->SetName("twist_pp_gr");
-  twist.pp.gr->SetFillColor(kRed-2);
-  twist.pp.gr->SetFillStyle(3004);
-  twist.pp.gr->SetLineColor(kRed-2);
+  pp.gr = new TGraphErrors(npt,x,y,ex,ey);
+  pp.gr->SetName("twist_pp_gr");
+  pp.gr->SetFillColor(kRed-2);
+  pp.gr->SetFillStyle(3003);
+  pp.gr->SetLineColor(kRed-2);
 
-  twist.pp.gr->SetMarkerColor(kRed-2);
-  twist.pp.gr->SetMarkerStyle(20);
-  twist.pp.gr->SetMarkerSize(1.0);
+  pp.gr->SetMarkerColor(kRed-2);
+  pp.gr->SetMarkerStyle(20);
+  pp.gr->SetMarkerSize(1.0);
 
-  twist.pp.s = new smooth((TGraph*) twist.pp.gr,x[0],x[npt-1]);
+  pp.s = new smooth((TGraph*) pp.gr,x[0],x[npt-1]);
 
-  twist.pe.gr = new TGraphErrors(npt,xe,ye,exe,eye);
-  twist.pe.gr->SetName("twist_pe_gr");
-  twist.pe.gr->SetFillColor(kRed-2);
-  twist.pe.gr->SetFillStyle(3004);
-  twist.pe.gr->SetLineColor(kRed-2);
+  pe.gr = new TGraphErrors(npt,xe,ye,exe,eye);
+  pe.gr->SetName("twist_pe_gr");
+  pe.gr->SetFillColor(kRed-2);
+  pe.gr->SetFillStyle(3003);
+  pe.gr->SetLineColor(kRed-2);
 
-  twist.pe.gr->SetMarkerColor(kRed+2);
-  twist.pe.gr->SetMarkerStyle(20);
-  twist.pe.gr->SetMarkerSize(1.0);
+  pe.gr->SetMarkerColor(kRed+2);
+  pe.gr->SetMarkerStyle(20);
+  pe.gr->SetMarkerSize(1.0);
 
-  twist.pe.s = new smooth((TGraph*) twist.pe.gr,xe[0],xe[npt-1]);
+  pe.s = new smooth((TGraph*) pe.gr,xe[0],xe[npt-1]);
 }
 
 
 
 //-----------------------------------------------------------------------------
-void init_twist_deuteron_data() {
+void twist_data::init_deuteron_data() {
 
   float data [] = {
 		   130.361,0.000103448,
@@ -403,13 +397,13 @@ void init_twist_deuteron_data() {
   }
   printf("-- end init TWIST deuteron upper\n");
 
-  twist.dp.gru = new TGraph(npt,x,y);
-  twist.dp.gru->SetName("twist_dp_gru");
-  twist.dp.su = new smooth(twist.dp.gru,x[0],x[npt-1]);
+  dp.gru = new TGraph(npt,x,y);
+  dp.gru->SetName("twist_dp_gru");
+  dp.su = new smooth(dp.gru,x[0],x[npt-1]);
 
-  twist.de.gru = new TGraph(npt,xe,ye);
-  twist.de.gru->SetName("twist_de_gru");
-  twist.de.su = new smooth(twist.de.gru,xe[0],xe[npt-1]);
+  de.gru = new TGraph(npt,xe,ye);
+  de.gru->SetName("twist_de_gru");
+  de.su = new smooth(de.gru,xe[0],xe[npt-1]);
 
   npt = 0;
   for(int i=0; data_lower[2*i] >= 0; i++) {
@@ -424,13 +418,13 @@ void init_twist_deuteron_data() {
     npt++;
   }
 
-  twist.dp.grl = new TGraph(npt,x,y);
-  twist.dp.grl->SetName("twist_dp_grl");
-  twist.dp.sl = new smooth(twist.dp.grl,x[0],x[npt-1]);
+  dp.grl = new TGraph(npt,x,y);
+  dp.grl->SetName("twist_dp_grl");
+  dp.sl = new smooth(dp.grl,x[0],x[npt-1]);
 
-  twist.de.grl = new TGraph(npt,xe,ye);
-  twist.de.grl->SetName("twist_de_grl");
-  twist.de.sl = new smooth(twist.de.grl,xe[0],xe[npt-1]);
+  de.grl = new TGraph(npt,xe,ye);
+  de.grl->SetName("twist_de_grl");
+  de.sl = new smooth(de.grl,xe[0],xe[npt-1]);
 
   npt = 0;
 
@@ -439,8 +433,8 @@ void init_twist_deuteron_data() {
     float p   = data[2*i  ];
     x[npt]    = p;
     y[npt]    = data[2*i+1];
-    float eu  = twist.dp.su->GetFunc()->Eval(p);
-    float el  = twist.dp.sl->GetFunc()->Eval(p);
+    float eu  = dp.su->GetFunc()->Eval(p);
+    float el  = dp.sl->GetFunc()->Eval(p);
     float err = (eu-el)/2;
     ex[npt]   = 0;
     ey[npt]   = err;
@@ -449,8 +443,8 @@ void init_twist_deuteron_data() {
     xe[npt]   = e;
     ye[npt]   = (md/p)*data[2*i+1];
     
-    eu        = twist.de.su->GetFunc()->Eval(e);
-    el        = twist.de.sl->GetFunc()->Eval(e);
+    eu        = de.su->GetFunc()->Eval(e);
+    el        = de.sl->GetFunc()->Eval(e);
     err       = (eu-el)/2;
     exe[npt]  = 0;
     eye[npt]  = err;
@@ -458,36 +452,35 @@ void init_twist_deuteron_data() {
     npt++;
   }
 
-  twist.dp.gr = new TGraphErrors(npt,x,y,ex,ey);
-  twist.dp.gr->SetName("twist_dp_gr");
-  twist.dp.gr->SetFillColor(kRed-2);
-  twist.dp.gr->SetFillStyle(3003);
-  twist.dp.gr->SetLineColor(kRed-2);
+  dp.gr = new TGraphErrors(npt,x,y,ex,ey);
+  dp.gr->SetName("twist_dp_gr");
+  dp.gr->SetFillColor(kRed-2);
+  dp.gr->SetFillStyle(3003);
+  dp.gr->SetLineColor(kRed-2);
 
-  twist.dp.gr->SetMarkerColor(kRed-2);
-  twist.dp.gr->SetMarkerStyle(20);
-  twist.dp.gr->SetMarkerSize(1.0);
+  dp.gr->SetMarkerColor(kRed-2);
+  dp.gr->SetMarkerStyle(20);
+  dp.gr->SetMarkerSize(1.0);
 
-  twist.dp.s = new smooth((TGraph*) twist.dp.gr,x [0],x [npt-1]);
+  dp.s = new smooth((TGraph*) dp.gr,x [0],x [npt-1]);
 
-  twist.de.gr = new TGraphErrors(npt,xe,ye,exe,eye);
-  twist.de.gr->SetName("twist_de_gr");
-  twist.de.gr->SetFillColor(kMagenta-2);
-  twist.de.gr->SetFillStyle(3003);
-  twist.de.gr->SetLineColor(kMagenta-2);
+  de.gr = new TGraphErrors(npt,xe,ye,exe,eye);
+  de.gr->SetName("twist_de_gr");
+  de.gr->SetFillColor(kMagenta-2);
+  de.gr->SetFillStyle(3003);
+  de.gr->SetLineColor(kMagenta-2);
 
-  twist.de.gr->SetMarkerColor(kMagenta-2);
-  twist.de.gr->SetMarkerStyle(20);
-  twist.de.gr->SetMarkerSize(1.0);
-  twist.de.s = new smooth((TGraph*) twist.de.gr,xe[0],xe[npt-1]);
-
+  de.gr->SetMarkerColor(kMagenta-2);
+  de.gr->SetMarkerStyle(20);
+  de.gr->SetMarkerSize(1.0);
+  de.s = new smooth((TGraph*) de.gr,xe[0],xe[npt-1]);
 }
 
 
 //-----------------------------------------------------------------------------
 // this is needed for validation only
 //-----------------------------------------------------------------------------
-void init_twist_wh_data() {
+void twist_data::init_wh_data() {
   float data_wh[] = {
 		     51.9915,5.35168e-06,
 		     53.9829,3.10398e-05,
@@ -562,14 +555,14 @@ void init_twist_wh_data() {
     npt++;
   }
 
-  twist.wh = new TGraph(npt,x,y);
-  twist.wh->SetName("g_twist_wh");
-  twist.swh = new smooth(twist.wh,x[0],x[npt-1]);
+  wh = new TGraph(npt,x,y);
+  wh->SetName("g_twist_wh");
+  swh = new smooth(wh,x[0],x[npt-1]);
 }
 
 
 //-----------------------------------------------------------------------------
-void init_twist_proton_precompound_data() {
+void twist_data::init_proton_precompound_data() {
 
   float data[] = {
     2.77640,1.39527e-06,
@@ -641,18 +634,18 @@ void init_twist_proton_precompound_data() {
     npt++;
   }
 
-  twist.ppg.gr = new TGraph(npt,x,y);
-  twist.ppg.gr->SetName("twist_ppg_gr");
-  twist.ppg.s  = new smooth(twist.ppg.gr,x[0],x[npt-1]);
+  ppg.gr = new TGraph(npt,x,y);
+  ppg.gr->SetName("twist_ppg_gr");
+  ppg.s  = new smooth(ppg.gr,x[0],x[npt-1]);
 
-  twist.peg.gr = new TGraph(npt,xe,ye);
-  twist.peg.gr->SetName("twist_peg_gr");
-  twist.peg.s  = new smooth(twist.peg.gr,xe[0],xe[npt-1]);
+  peg.gr = new TGraph(npt,xe,ye);
+  peg.gr->SetName("twist_peg_gr");
+  peg.s  = new smooth(peg.gr,xe[0],xe[npt-1]);
 }
 
 
 //-----------------------------------------------------------------------------
-void init_twist_deuteron_precompound_data() {
+void twist_data::init_deuteron_precompound_data() {
 
   float data[] = {
     4.89939,2.07182e-07,
@@ -753,29 +746,29 @@ void init_twist_deuteron_precompound_data() {
     npt++;
   }
 
-  twist.dpg.gr = new TGraph(npt,x,y);
-  twist.dpg.gr->SetName("twist_dpg_gr");
-  twist.dpg.s  = new smooth(twist.dpg.gr,x[0],x[npt-1]);
+  dpg.gr = new TGraph(npt,x,y);
+  dpg.gr->SetName("twist_dpg_gr");
+  dpg.s  = new smooth(dpg.gr,x[0],x[npt-1]);
 
-  twist.deg.gr = new TGraph(npt,xe,ye);
-  twist.deg.gr->SetName("twist_deg_gr");
-  twist.deg.s  = new smooth(twist.deg.gr,xe[0],xe[npt-1]);
+  deg.gr = new TGraph(npt,xe,ye);
+  deg.gr->SetName("twist_deg_gr");
+  deg.s  = new smooth(deg.gr,xe[0],xe[npt-1]);
 }
 
 
 //-----------------------------------------------------------------------------
 // try to normalize to proton data
 //-----------------------------------------------------------------------------
-void init_twist_proton_dog() {
+void twist_data::init_proton_dog() {
 
   float x[1000], y[1000], xe[1000], ye[1000]; 
 
-  int npt = twist.pp.gr->GetN();
+  int npt = pp.gr->GetN();
 
   for(int i=0; i<npt; i++) {
-    double xx = twist.pp.gr->GetX()[i];
-    double yy = twist.pp.gr->GetY()[i];
-    double yg = twist.ppg.s->GetFunc()->Eval(xx);
+    double xx = pp.gr->GetX()[i];
+    double yy = pp.gr->GetY()[i];
+    double yg = ppg.s->GetFunc()->Eval(xx);
 
     x [i] = xx;
 
@@ -783,22 +776,22 @@ void init_twist_proton_dog() {
     else        y[i] = 0;
   }
 
-  twist.pp_dog = new TGraph(npt,x,y);
+  pp_dog = new TGraph(npt,x,y);
 }
 
 //-----------------------------------------------------------------------------
 // try to normalize to proton data
 //-----------------------------------------------------------------------------
-void init_twist_deuteron_dog() {
+void twist_data::init_deuteron_dog() {
 
   float x[1000], y[1000], xe[1000], ye[1000]; 
 
-  int npt = twist.dp.gr->GetN();
+  int npt = dp.gr->GetN();
 
   for(int i=0; i<npt; i++) {
-    double xx = twist.dp.gr->GetX()[i];
-    double yy = twist.dp.gr->GetY()[i];
-    double yg = twist.dpg.s->GetFunc()->Eval(xx);
+    double xx = dp.gr->GetX()[i];
+    double yy = dp.gr->GetY()[i];
+    double yg = dpg.s->GetFunc()->Eval(xx);
 
     x [i] = xx;
 
@@ -806,6 +799,5 @@ void init_twist_deuteron_dog() {
     else        y[i] = 0;
   }
 
-  twist.dp_dog = new TGraph(npt,x,y);
+  dp_dog = new TGraph(npt,x,y);
 }
-
