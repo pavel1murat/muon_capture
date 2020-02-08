@@ -379,7 +379,7 @@ void twist_data::init_deuteron_data() {
   
   double md = MD;
 
-  printf("-- startinit TWIST deuteron upper\n");
+  //  printf("-- startinit TWIST deuteron upper\n");
   for(int i=0; data_upper[2*i] >= 0; i++) {
 					//momentum
     float p = data_upper[2*i  ];
@@ -390,12 +390,12 @@ void twist_data::init_deuteron_data() {
     xe[npt] = e;
     ye[npt] = (md/p)*data_upper[2*i+1];
 
-    printf("i,npt,x,y,xe,ye : %3i %3i %12.5e %12.5e  %12.5e %12.5e\n",
-	   i,npt,x[npt],y[npt],xe[npt],ye[npt]);
+    // printf("i,npt,x,y,xe,ye : %3i %3i %12.5e %12.5e  %12.5e %12.5e\n",
+    // 	   i,npt,x[npt],y[npt],xe[npt],ye[npt]);
 
     npt++;
   }
-  printf("-- end init TWIST deuteron upper\n");
+  //  printf("-- end init TWIST deuteron upper\n");
 
   dp.gru = new TGraph(npt,x,y);
   dp.gru->SetName("twist_dp_gru");

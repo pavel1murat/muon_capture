@@ -25,35 +25,42 @@ public:
     double ey;
   };
 
-  twist_data*     twist;
-  alcap_data*     alcap;
-
   TGraphErrors*   gr_fit_pe;
   TGraphErrors*   gr_fit_de;
 
   TF1*            f_prot;
+  TF1*            f_prot_2;
   TF1*            f_deut;
+
+  TF1*            fp_hgf;  // https://arxiv.org/pdf/1803.08403.pdf
+  TF1*            fe_hgf;  // 
 
   muon_capture();
 
-  static double fitf(double* X, double* P);
+  static double fitf_prot  (double* X, double* P);
+  static double fitf_prot_2(double* X, double* P);
 
-  void   init_data();
-  void   init_proton_fit ();
-  void   init_deuteron_fit ();
+  void   init_data        ();
+
+  void   init_proton_fit  ();
+  void   init_proton_fit_2();
+  void   init_deuteron_fit();
+  void   init_hgf_spectrum();
 
   void   fit_proton_energy_spectrum();
 
   void   fit_deuteron_energy_spectrum();
 
+  static double hgf_spectrum(double* X, double* Par);
+
   void   plot_energy_spectra();
 
-  void   plot(int Figure, int Print);
+  void   plot(int Figure, int Print = 0);
 };
 
-muon_capture*  mc;
-twist_data*    twist;
-alcap_data*    alcap;
+muon_capture*  mc   (nullptr);
+twist_data*    twist(nullptr);
+alcap_data*    alcap(nullptr);
 
 //-----------------------------------------------------------------------------
 muon_capture::muon_capture() {
@@ -63,65 +70,196 @@ muon_capture::muon_capture() {
 
   init_data();
   
-  f_prot = new TF1("f_prot",fitf,0,50,7);
-  f_deut = new TF1("f_deut",fitf,0,50,7);
+  //  init_proton_fit();
 
-  f_prot->SetLineColor(kBlue+2);
+  f_prot = nullptr;
   init_proton_fit();
 
-  f_deut->SetLineColor(kBlue+2);
+  f_prot_2 = nullptr;
+  init_proton_fit_2();
+
+  f_deut = nullptr;
   init_deuteron_fit();
+
+  init_hgf_spectrum();
 }
 
 //-----------------------------------------------------------------------------
-double muon_capture::fitf(double* X, double* P) {
+// parameterization by Ed Hungerford : https://arxiv.org/pdf/1803.08403.pdf
+// Par[0] = 0: energy
+//        = 1: momentum
+// Par[1]    : normalization of the integral
+//-----------------------------------------------------------------------------
+double muon_capture::hgf_spectrum(double* X, double* Par) {
+
+  //taken from GMC
+  //
+  //   Ed Hungerford  Houston University May 17 1999
+  //   Rashid Djilkibaev New York University (modified) May 18 1999
+  //
+  //   e - proton kinetic energy (MeV)
+  //   p - proton Momentum (MeV/c)
+  //
+  //   Generates a proton spectrum similar to that observed in
+  //   mu capture in Si.  JEPT 33(1971)11 and PRL 20(1967)569
+
+  //these numbers are in MeV!!!!
+  static const double emn  = 1.4; // replacing par1 from GMC
+  static const double par2 = 1.3279;
+  static const double par3 = 17844.0;
+  static const double par4 = .32218;
+  static const double par5 = 100.;
+  static const double par6 = 10.014;
+  static const double par7 = 1050.;
+  static const double par8 = 5.103;
+
+  static double MP = 938. ; 
+    
+  double spectrumWeight;
+
+  double e, p, w1(1.);
+
+  if (Par[0] == 0) e = X[0];
+  else {
+    p  = X[0];
+    e  = p*p/(2*MP);
+    w1 = p/MP;
+  }
+
+  if (e >= 20) {
+    spectrumWeight=par5*exp(-(e-20.)/par6);
+  }
+  else if (e >= 8.0 && e <= 20.0) {
+    spectrumWeight=par7*exp(-(e-8.)/par8);
+  }
+  else if (e > emn) {
+    double xw=(1.-emn/e);
+    double xu=std::pow(xw,par2);
+    double xv=par3*exp(-par4*e);
+    spectrumWeight=xv*xu;
+  }
+  else {
+    spectrumWeight = 0.;
+  }
+
+  return w1*Par[1]*spectrumWeight;
+}
+
+//-----------------------------------------------------------------------------
+double muon_capture::fitf_prot(double* X, double* P) {
   double f;
 
   double e  = X[0];
-  double e0 =  P[0];
-  double e1 =  P[6];
+  double e1 = P[3];
   double e2 = 10;
 
-  if (e <= e0) {
+  if (e <= 0) {
     f = 0;
   }
   else if (e < e1) {
-    f = pow(1.-e0/e,P[2])*exp(-e/P[3]);
-  }
-  else if (e < e2) {
-    double c4 = pow(1.-e0/e1,P[2])*exp(-e1/P[3]);
-    f = c4*exp(-(e-e1)/P[4]);
+    f = pow(e/(1+P[1]*e),P[2])*exp(-e/P[4]);
   }
   else {
-    double c6 = pow(1.-e0/e1,P[2])*exp(-e1/P[3])*exp(-(e2-e1)/P[4]);
-    f = c6*exp(-(e-e2)/P[5]);
+    double c4 = pow(e1/(1+P[1]*e1),P[2])*exp(-e1/P[4]);
+    f = c4*exp(-(e-e1)/P[5]);
   }
 
-  return P[1]*f;
+  return P[0]*f;
 }
 
 //-----------------------------------------------------------------------------
 void muon_capture::init_proton_fit() {
 
-  f_prot->FixParameter(0,1.4);
-  f_prot->SetParameter(1,0.025);
-  f_prot->SetParameter(2,1.1);
-  f_prot->SetParameter(3,4.5);
-  f_prot->SetParameter(4,5.);
+  if (f_prot == nullptr) {
+    f_prot = new TF1("f_prot",fitf_prot,0,50,6);
+    f_prot->SetLineColor(kBlue+2);
+  }
+
+  f_prot->SetParameter(0,0.01);
+  f_prot->SetParameter(1,0.5);
+  f_prot->SetParameter(2,2.);
+  f_prot->SetParameter(3,7.);
+  f_prot->SetParameter(4,3.);
   f_prot->SetParameter(5,6.);
-  f_prot->SetParameter(6,3.);
 }
 
 //-----------------------------------------------------------------------------
+double muon_capture::fitf_prot_2(double* X, double* P) {
+  double f;
+
+  double e  = X[0];
+  double e1 = P[3];
+  //  double e2 = 10;
+
+  if (e <= 0) {
+    f = 0;
+  }
+  else if (e < e1) {
+    f = pow(e,P[6])/(1+P[1]*P[1]*(e-P[2])*(e-P[2]))*exp(-e/P[4]);
+  }
+  else {
+    double c4 = pow(e1,P[6])/(1+P[1]*P[1]*(e1-P[2])*(e1-P[2]))*exp(-e1/P[4]);
+    f = c4*exp(-(e-e1)/P[5]);
+  }
+
+  return P[0]*f;
+}
+
+//-----------------------------------------------------------------------------
+void muon_capture::init_proton_fit_2() {
+
+  if (f_prot_2 == nullptr) {
+    f_prot_2 = new TF1("f_prot",fitf_prot_2,0,50,7);
+    f_prot_2->SetLineColor(kBlue+2);
+  }
+
+  f_prot_2->SetParameter(0,0.005);
+  f_prot_2->SetParameter(1,0.8);
+  f_prot_2->SetParameter(2,3.5); 
+  f_prot_2->SetParameter(3,7.0);
+  f_prot_2->SetParameter(4,3.4);
+  f_prot_2->SetParameter(5,5.7);
+  f_prot_2->SetParameter(6,0.8);
+}
+
+//-----------------------------------------------------------------------------
+// fit parameters in the deuteron energy spectrum fit based on the proton fit
 void muon_capture::init_deuteron_fit() {
 
-  f_deut->FixParameter(0,1.4);
-  f_deut->SetParameter(1,0.01);
-  f_deut->SetParameter(2,1.3);
-  f_deut->SetParameter(3,4);
-  f_deut->SetParameter(4,5.);
-  f_deut->SetParameter(5,8.);
-  f_deut->SetParameter(6,5.);
+  if (f_deut == nullptr) {
+    f_deut = new TF1("f_deut",fitf_prot ,0,50,6);
+    f_deut->SetLineColor(kBlue+2);
+  }
+
+  f_deut->SetParameter(0,0.01);
+  f_deut->FixParameter(1,0.5);
+  f_deut->SetParameter(2,2);
+  f_deut->FixParameter(3,7.755);
+  f_deut->SetParameter(4,3);
+  f_deut->SetParameter(5,6.);
+}
+
+//-----------------------------------------------------------------------------
+void muon_capture::init_hgf_spectrum() {
+					// energy spectrum
+  fe_hgf = new TF1("fe_hgf",muon_capture::hgf_spectrum,0,100,2);
+  fe_hgf->SetParameter(0,0);
+  fe_hgf->SetParameter(1,1);
+  fe_hgf->SetParameter(1,0.05/fe_hgf->Integral(0,100));
+  fe_hgf->SetNpx(1000);
+
+  fe_hgf->SetTitle("Ejected proton energy");
+  fe_hgf->GetXaxis()->SetTitle("E, MeV");
+
+					// momentum 
+  fp_hgf = new TF1("fp_hgf",muon_capture::hgf_spectrum,0,1000,2);
+  fp_hgf->SetParameter(0,1);
+  fp_hgf->SetParameter(1,1);
+  fp_hgf->SetParameter(1,0.05/fp_hgf->Integral(0,1000));
+  fp_hgf->SetNpx(1000);
+  
+  fp_hgf->SetTitle("Ejected proton momentum");
+  fp_hgf->GetXaxis()->SetTitle("P, MeV/c");
 }
 
 //-----------------------------------------------------------------------------
@@ -136,7 +274,7 @@ void muon_capture::init_data() {
 
   gInterpreter->ProcessLine("twist = new twist_data();");
   gInterpreter->ProcessLine("alcap = new alcap_data();");
-  printf("initialized\n");
+  printf("muon_capture initialized\n");
 }
 
 //-----------------------------------------------------------------------------
@@ -236,9 +374,9 @@ void muon_capture::fit_proton_energy_spectrum() {
   gr_fit_pe->SetName("gr_fit_pe");
   gr_fit_pe->SetTitle("proton energy");
 
-  TCanvas* c_fit = new TCanvas("c_fit","c fit",1300,900);
+  //  TCanvas* c_fit = new TCanvas("c_fit","c fit",1300,900);
 
-  c_fit->cd();
+  //  c_fit->cd();
 
   gr_fit_pe->SetMarkerStyle(20);
   gr_fit_pe->SetMarkerSize(1);
@@ -250,6 +388,7 @@ void muon_capture::fit_proton_energy_spectrum() {
   gr_fit_pe->Draw("ap");
 
   gr_fit_pe->Fit(f_prot,"","");
+  //  gr_fit_pe->Fit(f_prot_2,"","");
 }
 
 //-----------------------------------------------------------------------------
@@ -302,10 +441,9 @@ void muon_capture::fit_deuteron_energy_spectrum() {
   printf("npp = %3i\n",npp);
 
   gr_fit_de = new TGraphErrors(nptot,x,y,ex,ey);
-
-  TCanvas* c_fit_de = new TCanvas("c_fit_de","c fit",1300,900);
-
-  c_fit_de->cd();
+  gr_fit_de->SetTitle("");
+  gr_fit_de->GetXaxis()->SetTitle("energy, MeV");
+  gr_fit_de->GetXaxis()->SetLimits(0,50);
 
   gr_fit_de->SetMarkerStyle(20);
   gr_fit_de->SetMarkerSize(1);
@@ -315,7 +453,6 @@ void muon_capture::fit_deuteron_energy_spectrum() {
   gr_fit_de->SetFillColor(kMagenta+2);
 
   gr_fit_de->Draw("ap");
-
 //-----------------------------------------------------------------------------
 // need to redefine parameters
 //-----------------------------------------------------------------------------
@@ -367,10 +504,189 @@ void muon_capture::plot(int Figure, int Print) {
   TString canvas_name = Form("Figure_%04i",Figure);
   TCanvas* c = new TCanvas(canvas_name,canvas_name,1300,900);
 
-  if (Figure == 1) {
+  if (Figure == 1) {// fig_0001: proton momentum, linear
+    // plot name: fig_001_proton_energy_log.eps
+    c->SetLogy(0);
+    twist->pp.gr->GetXaxis()->SetTitle("proton momentum, MeV/c");
+    twist->pp.gr->GetXaxis()->SetLimits(0,350);
     twist->pp.gr->Draw("alp");
     twist->pp.gr->Draw("p3,same");
     alcap->pp.gr->Draw("p3,same");
+
+    TLegend* leg = new TLegend(0.6,0.7,0.8,0.8);
+    leg->SetLineWidth(0);
+    leg->AddEntry(twist->pp.gr,"TWIST","f");
+    leg->AddEntry(alcap->pp.gr,"AlCap","f");
+    leg->Draw();
   }
+
+  if (Figure == 2) { // fig_0002: proton momentum, log
+    // plot name: fig_002_proton_momentum_log.eps
+    c->SetLogy(1);
+    twist->pp.gr->GetXaxis()->SetTitle("proton momentum, MeV/c");
+    twist->pp.gr->GetXaxis()->SetLimits(0,350);
+    twist->pp.gr->Draw("alp");
+    twist->pp.gr->Draw("p3,same");
+    alcap->pp.gr->Draw("p3,same");
+
+    TLegend* leg = new TLegend(0.6,0.7,0.8,0.8);
+    leg->SetLineWidth(0);
+    leg->AddEntry(twist->pp.gr,"TWIST","f");
+    leg->AddEntry(alcap->pp.gr,"AlCap","f");
+    leg->Draw();
+  }
+
+  if (Figure == 3) { // fig_0003: proton momenum, overlay with Mu2e model
+    // plot name: fig_003_proton_momentum_twist_alcap_mu2e.eps
+    //    c->SetLogy(1);
+
+    twist->pp.gr->GetXaxis()->SetTitle("proton momentum, MeV");
+    twist->pp.gr->GetXaxis()->SetLimits(0,350);
+    twist->pp.gr->GetYaxis()->SetRangeUser(0,0.0009);
+    twist->pp.gr->Draw("alp3");
+    //    twist->pe.gr->Draw("p3,same");
+    
+    fp_hgf->Draw("same");
+
+    alcap->pp.gr->Draw("p3,same");
+
+    TGraph* gr = (TGraph*) twist->ppg.gr->Clone("gr");
+    int n = gr->GetN();
+    double sf = 0.05/gr->Integral();
+
+    for (int i=0; i<n; i++) {
+      gr->GetY()[i] = gr->GetY()[i]*sf;
+    }
+    
+    gr->Draw("same");
+
+    TLegend* leg = new TLegend(0.6,0.7,0.8,0.8);
+    leg->SetLineWidth(0);
+    leg->AddEntry(fe_hgf,"Mu2e","f");
+    leg->AddEntry(twist->pp.gr,"TWIST","f");
+    leg->AddEntry(alcap->pp.gr,"AlCap","f");
+    leg->AddEntry(gr,"G4 precompound, I=0.05","l");
+    leg->Draw();
+  }
+
+  if (Figure == 11) {// fig_0012: proton energy, linear
+    // plot name: fig_011_proton_energy.eps
+    c->SetLogy(0);
+    twist->pe.gr->GetXaxis()->SetTitle("proton energy, MeV");
+    twist->pe.gr->GetXaxis()->SetLimits(0,50);
+    twist->pe.gr->Draw("alp");
+    twist->pe.gr->Draw("p3,same");
+    alcap->pe.gr->Draw("p3,same");
+
+    TLegend* leg = new TLegend(0.6,0.7,0.8,0.8);
+    leg->SetLineWidth(0);
+    leg->AddEntry(twist->pe.gr,"TWIST","f");
+    leg->AddEntry(alcap->pe.gr,"AlCap","f");
+    leg->Draw();
+  }
+
+  if (Figure == 12) { // fig_0012: proton energy, log 
+    // plot name: fig_012_proton_energy_log.eps
+    c->SetLogy(1);
+    twist->pe.gr->GetXaxis()->SetTitle("proton energy, MeV");
+    twist->pe.gr->GetXaxis()->SetLimits(0,50);
+    twist->pe.gr->Draw("alp");
+    twist->pe.gr->Draw("p3,same");
+    alcap->pe.gr->Draw("p3,same");
+
+    TLegend* leg = new TLegend(0.6,0.7,0.8,0.8);
+    leg->SetLineWidth(0);
+    leg->AddEntry(twist->pe.gr,"TWIST","f");
+    leg->AddEntry(alcap->pe.gr,"AlCap","f");
+    leg->Draw();
+  }
+
+  if (Figure == 13) { // fig_0013: proton energy, overlay with Mu2e model
+    // name: fig_013_proton_energy_twist_alcap_mu2e.eps
+    //    c->SetLogy(1);
+
+    twist->pe.gr->GetXaxis()->SetTitle("proton energy, MeV");
+    twist->pe.gr->GetXaxis()->SetLimits(0,50);
+    twist->pe.gr->GetYaxis()->SetLimits(0,0.001);
+    twist->pe.gr->Draw("alp3");
+    //    twist->pe.gr->Draw("p3,same");
+
+    fe_hgf->Draw("same");
+
+    alcap->pe.gr->Draw("p3,same");
+
+    TLegend* leg = new TLegend(0.6,0.7,0.8,0.8);
+    leg->SetLineWidth(0);
+    leg->AddEntry(fe_hgf,"Mu2e","f");
+    leg->AddEntry(twist->pe.gr,"TWIST","f");
+    leg->AddEntry(alcap->pe.gr,"AlCap","f");
+    leg->Draw();
+  }
+
+  if (Figure == 14) { // fig_0014: twist proton and deutron energy spectra linear 
+    // name: fig_014_twist_proton_deutron_energy.eps
+    //    c->SetLogy(1);
+
+    twist->pe.gr->SetTitle("");
+    twist->pe.gr->GetXaxis()->SetTitle("energy, MeV");
+    twist->pe.gr->GetXaxis()->SetLimits(0,50);
+    twist->pe.gr->GetYaxis()->SetLimits(0,0.001);
+    twist->pe.gr->Draw("alp3");
+
+    alcap->pe.gr->Draw("lp3,same");
+
+    twist->de.gr->GetXaxis()->SetTitle("energy, MeV");
+    twist->de.gr->GetXaxis()->SetLimits(0,50);
+    twist->de.gr->GetYaxis()->SetLimits(0,0.001);
+    twist->de.gr->Draw("lp3,same");
+
+
+    TLegend* leg = new TLegend(0.6,0.7,0.8,0.8);
+    leg->SetLineWidth(0);
+    leg->AddEntry(twist->pe.gr,"TWIST protons","f");
+    leg->AddEntry(alcap->pe.gr,"AlCap","f");
+    leg->AddEntry(twist->de.gr,"TWIST deuterons","f");
+    leg->Draw();
+  }
+
+  if (Figure == 15) { // fig_0015: twist proton and deutron energy spectra log
+    // name: fig_015_twist_proton_deutron_energy_log.eps
+
+    c->SetLogy(1);
+
+    twist->pe.gr->SetTitle("");
+    twist->pe.gr->GetXaxis()->SetTitle("energy, MeV");
+    twist->pe.gr->GetXaxis()->SetLimits(0,50);
+    twist->pe.gr->GetYaxis()->SetLimits(0,0.001);
+    twist->pe.gr->Draw("alp3");
+
+    alcap->pe.gr->Draw("lp3,same");
+
+    twist->de.gr->GetXaxis()->SetTitle("energy, MeV");
+    twist->de.gr->GetXaxis()->SetLimits(0,50);
+    twist->de.gr->GetYaxis()->SetLimits(0,0.001);
+    twist->de.gr->Draw("lp3,same");
+
+
+    TLegend* leg = new TLegend(0.6,0.7,0.8,0.8);
+    leg->SetLineWidth(0);
+    leg->AddEntry(twist->pe.gr,"TWIST protons","f");
+    leg->AddEntry(alcap->pe.gr,"AlCap","f");
+    leg->AddEntry(twist->de.gr,"TWIST deuterons","f");
+    leg->Draw();
+  }
+
+  if (Figure == 21) { // fit proton energy spectrum
+    // plot name: fig_021_fit_proton_energy_spectrum.eps
+    fit_proton_energy_spectrum();
+  }
+
+  if (Figure == 22) { // fit deuteron energy spectrum
+    // plot name: fig_022_fit_deuteron_energy_spectrum.eps
+    fit_deuteron_energy_spectrum();
+  }
+
+
+
 
 }
