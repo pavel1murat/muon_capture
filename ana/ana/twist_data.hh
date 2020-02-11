@@ -1,5 +1,5 @@
-#ifndef __twist_data_hh__
-#define __twist_data_hh__
+#ifndef __ana_twist_data_hh__
+#define __ana_twist_data_hh__
 ///////////////////////////////////////////////////////////////////////////////
 // TWIST data - momentum in MeV/c
 ///////////////////////////////////////////////////////////////////////////////
@@ -57,8 +57,9 @@ struct twist_data {
   
   void init_proton_dog               ();   // data-over-geant
   void init_deuteron_dog             ();   // data-over-geant
-
-  
+ 
 };
+
+extern twist_data*    twist;
 
 #endif

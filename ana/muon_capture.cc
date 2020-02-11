@@ -8,60 +8,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #include "TCanvas.h"
-#include "TGraphErrors.h"
-#include "TInterpreter.h"
+#include "TLegend.h"
 
-#include "twist_data.hh"
-#include "alcap_data.hh"
+#include "ana/muon_capture.hh"
+
 #include "murat/plot/murat_plot_functions.hh"
 
-
-class muon_capture {
-public:
-
-  struct dat_t {
-    double x;
-    double y; 
-    double ey;
-  };
-
-  TGraphErrors*   gr_fit_pe;
-  TGraphErrors*   gr_fit_de;
-
-  TF1*            f_prot;
-  TF1*            f_prot_2;
-  TF1*            f_deut;
-
-  TF1*            fp_hgf;  // https://arxiv.org/pdf/1803.08403.pdf
-  TF1*            fe_hgf;  // 
-
-  muon_capture();
-
-  static double fitf_prot  (double* X, double* P);
-  static double fitf_prot_2(double* X, double* P);
-
-  void   init_data        ();
-
-  void   init_proton_fit  ();
-  void   init_proton_fit_2();
-  void   init_deuteron_fit();
-  void   init_hgf_spectrum();
-
-  void   fit_proton_energy_spectrum();
-
-  void   fit_deuteron_energy_spectrum();
-
-  static double hgf_spectrum(double* X, double* Par);
-
-  void   plot_energy_spectra();
-
-  void   plot(int Figure, int Print = 0);
-};
-
-muon_capture*  mc   (nullptr);
-twist_data*    twist(nullptr);
-alcap_data*    alcap(nullptr);
-
+muon_capture* mc(nullptr);
 //-----------------------------------------------------------------------------
 muon_capture::muon_capture() {
 
@@ -151,7 +104,7 @@ double muon_capture::fitf_prot(double* X, double* P) {
 
   double e  = X[0];
   double e1 = P[3];
-  double e2 = 10;
+  //  double e2 = 10;
 
   if (e <= 0) {
     f = 0;
@@ -264,19 +217,35 @@ void muon_capture::init_hgf_spectrum() {
 
 //-----------------------------------------------------------------------------
 void muon_capture::init_data() {
-  if (! gInterpreter->IsLoaded("muon_capture/scripts/alcap_data.C")) {
-    gInterpreter->LoadMacro("muon_capture/scripts/alcap_data.C");
-  }
+  // if (! gInterpreter->IsLoaded("muon_capture/scripts/alcap_data.C")) {
+  //   gInterpreter->LoadMacro("muon_capture/scripts/alcap_data.C");
+  // }
 
-  if (! gInterpreter->IsLoaded("muon_capture/scripts/twist_data.C")) {
-    gInterpreter->LoadMacro("muon_capture/scripts/twist_data.C");
-  }
+  // if (! gInterpreter->IsLoaded("muon_capture/scripts/twist_data.C")) {
+  //   gInterpreter->LoadMacro("muon_capture/scripts/twist_data.C");
+  // }
 
-  gInterpreter->ProcessLine("twist = new twist_data();");
-  gInterpreter->ProcessLine("alcap = new alcap_data();");
+  // gInterpreter->ProcessLine("twist = new twist_data();");
+  // gInterpreter->ProcessLine("alcap = new alcap_data();");
+
+
+  twist = new twist_data();
+  alcap = new alcap_data();
+
   printf("muon_capture initialized\n");
 }
 
+//-----------------------------------------------------------------------------
+// FCN=21.3977 FROM MIGRAD    STATUS=CONVERGED     413 CALLS         414 TOTAL
+//                     EDM=2.60755e-07    STRATEGY= 1  ERROR MATRIX UNCERTAINTY   2.0 per cent
+//  EXT PARAMETER                                   STEP         FIRST   
+//  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+//   1  p0           9.92698e-03   9.60414e-04   1.73751e-07  -2.25181e+00
+//   2  p1           5.04814e-01   8.76443e-03  -2.45901e-06   8.56883e-02
+//   3  p2           1.76282e+00   6.47681e-01  -4.49109e-05  -6.58915e-03
+//   4  p3           7.75550e+00   4.04286e-03  -5.85623e-07   2.15198e-02
+//   5  p4           3.44504e+00   3.42612e-01  -3.64853e-06  -8.02442e-03
+//   6  p5           5.86909e+00   1.36226e-01  -4.86316e-05   5.45286e-03
 //-----------------------------------------------------------------------------
 void muon_capture::fit_proton_energy_spectrum() {
 
@@ -340,7 +309,7 @@ void muon_capture::fit_proton_energy_spectrum() {
     nptot        = nptot+1;
   }
 
-  printf(" nptot = %3i\n",nptot);
+  //  printf(" nptot = %3i\n",nptot);
 //-----------------------------------------------------------------------------
 // sort data according to ascending X
 //-----------------------------------------------------------------------------
@@ -365,10 +334,10 @@ void muon_capture::fit_proton_energy_spectrum() {
     y [i] = ad[i]->y;
     ey[i] = ad[i]->ey;
 
-    printf("i,x,y,ey : %3i %12.5e %12.5e %12.5e\n",i,x[i],y[i],ey[i]);
+    //    printf("i,x,y,ey : %3i %12.5e %12.5e %12.5e\n",i,x[i],y[i],ey[i]);
   }
 
-  printf("npp = %3i\n",npp);
+  //  printf("npp = %3i\n",npp);
 
   gr_fit_pe = new TGraphErrors(nptot,x,y,ex,ey);
   gr_fit_pe->SetName("gr_fit_pe");
@@ -393,6 +362,16 @@ void muon_capture::fit_proton_energy_spectrum() {
 
 //-----------------------------------------------------------------------------
 // AlCap doesn't have deuteron data
+// FCN=2.30803 FROM HESSE     STATUS=NOT POSDEF     23 CALLS        1176 TOTAL
+//                     EDM=3.4442e-07    STRATEGY= 1      ERR MATRIX NOT POS-DEF
+//  EXT PARAMETER                APPROXIMATE        STEP         FIRST   
+//  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+//   1  p0           1.10022e-03   3.35040e-04   4.97657e-09  -2.56153e+01
+//   2  p1           5.00000e-01     fixed    
+//   3  p2           6.54336e+00   7.82961e-01   9.88501e-06  -1.31436e-02
+//   4  p3           7.75500e+00     fixed    
+//   5  p4           2.49239e+00   2.59680e-01   3.71896e-06  -3.47638e-02
+//   6  p5           7.59651e+00   2.49517e-01   3.70865e-05  -4.15849e-04
 //-----------------------------------------------------------------------------
 void muon_capture::fit_deuteron_energy_spectrum() {
 
@@ -462,11 +441,12 @@ void muon_capture::fit_deuteron_energy_spectrum() {
 //-----------------------------------------------------------------------------
 void muon_capture::plot_energy_spectra() {
 
-  double protons_per_capture(0.05);
+  //  double protons_per_capture(0.05);
 
   TCanvas* c_e = new TCanvas("c_e","c_e",1300,800);
   
-  plot_ejected_proton_spectrum("e",protons_per_capture);
+  //  plot_ejected_proton_spectrum("e",protons_per_capture);
+
   twist->pe.gr->Draw("same,l3");
   twist->de.gr->Draw("same,l3");
   alcap->pe.gr->Draw("same,l3");
@@ -478,12 +458,16 @@ void muon_capture::plot_energy_spectra() {
   leg->AddEntry(alcap->pe.gr,"AlCap protons"  ,"f");
 
   leg->Draw();
+
+  c_e->Modified();
+  c_e->Update();
 //-----------------------------------------------------------------------------
 // plot momentum distributions
 //-----------------------------------------------------------------------------
   TCanvas* c_p = new TCanvas("c_p","c_p",1300,800);
   
-  plot_ejected_proton_spectrum("p",protons_per_capture);
+  //  plot_ejected_proton_spectrum("p",protons_per_capture);
+
   twist->pp.gr->Draw("same,l3");
   twist->dp.gr->Draw("same,l3");
   alcap->pp.gr->Draw("same,l3");
@@ -495,6 +479,9 @@ void muon_capture::plot_energy_spectra() {
   leg2->AddEntry(alcap->pp.gr,"AlCap protons"  ,"f");
 
   leg2->Draw();
+
+  c_p->Modified();
+  c_p->Update();
 }
 
 

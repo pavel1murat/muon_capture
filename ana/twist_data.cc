@@ -1,6 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "twist_data.hh"
+#include "ana/twist_data.hh"
+
+twist_data*    twist(nullptr);
 
 //-----------------------------------------------------------------------------
 twist_data::twist_data() {
@@ -8,6 +10,10 @@ twist_data::twist_data() {
   MD = 1875.6;                   // MeV/c
 
   init();
+}
+
+//-----------------------------------------------------------------------------
+twist_data::~twist_data() {
 }
 
 //-----------------------------------------------------------------------------
@@ -541,7 +547,7 @@ void twist_data::init_wh_data() {
 		     -1
   };
 
-  float x[1000], y[1000], ex[1000],ey[1000]; 
+  float x[1000], y[1000]; //, ex[1000],ey[1000]; 
 
   // integral twist.swh->GetFunc()->Integral(55,300) = 0.024389562
   // I need 0.05
@@ -761,7 +767,7 @@ void twist_data::init_deuteron_precompound_data() {
 //-----------------------------------------------------------------------------
 void twist_data::init_proton_dog() {
 
-  float x[1000], y[1000], xe[1000], ye[1000]; 
+  float x[1000], y[1000]; // , xe[1000], ye[1000]; 
 
   int npt = pp.gr->GetN();
 
@@ -784,7 +790,7 @@ void twist_data::init_proton_dog() {
 //-----------------------------------------------------------------------------
 void twist_data::init_deuteron_dog() {
 
-  float x[1000], y[1000], xe[1000], ye[1000]; 
+  float x[1000], y[1000]; //, xe[1000], ye[1000]; 
 
   int npt = dp.gr->GetN();
 

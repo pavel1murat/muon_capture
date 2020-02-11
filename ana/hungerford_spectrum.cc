@@ -7,7 +7,13 @@
 //        plot_ejected_proton_spectrum("p")
 // parameterization by Ed Hungerford : https://arxiv.org/pdf/1803.08403.pdf
 ///////////////////////////////////////////////////////////////////////////////
+#include <math.h>
 
+#include "TF1.h"
+#include "TAxis.h"
+#include "TLegend.h"
+
+//-----------------------------------------------------------------------------
 double GetEjectedProtontWeight(double* X, double* Par) {
 
   //taken from GMC

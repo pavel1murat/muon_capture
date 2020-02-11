@@ -1,5 +1,5 @@
-#ifndef __alcap_data_hh__
-#define __alcap_data_hh__
+#ifndef __ana_alcap_data_hh__
+#define __ana_alcap_data_hh__
 ///////////////////////////////////////////////////////////////////////////////
 // alcap data - in energy, keV, plotted dN/d(0.5 MeV)
 ///////////////////////////////////////////////////////////////////////////////
@@ -26,8 +26,8 @@ struct alcap_data {
   ~alcap_data();
 
   void  init();
-
 };
 
+extern alcap_data* alcap;
 
 #endif
